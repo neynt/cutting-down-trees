@@ -1,0 +1,49 @@
+<!doctype html>
+<html>
+<head>
+<title>Cutting Down Trees.</title>
+<link rel='stylesheet' href='style.css'>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+<script>
+
+var num_lumberjacks = 1;
+var num_logs = 0;
+var money = 0;
+
+var game_tick_timer;
+
+function addLogs(num) {
+  num_logs += num;
+  $('#num_logs').html(num_logs);
+}
+
+function gameTick() {
+  addLogs(num_lumberjacks);
+}
+
+function init() {
+  $('#num_lumberjacks').html(num_lumberjacks);
+  $('#num_logs').html(num_logs);
+  $('#money').html(money);
+  game_tick_timer = setInterval(gameTick, 1000);
+}
+
+$(document).ready(init);
+
+</script>
+
+</head>
+<body>
+<div id='title'>
+<h1>Cutting Down Trees.</h1>
+</div>
+<div id='inventory'>
+  <p>Logs: <span id='num_logs'></span></p>
+  <p>Money: <span id='money'></span></p>
+</div>
+<div id='units'>
+  <p>Lumberjacks: <span id='num_lumberjacks'></span></p>
+</div>
+</body>
+</html>

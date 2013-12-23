@@ -1,0 +1,24 @@
+/* normalize ... everything! */
+* {
+  padding: 0;
+  margin: 0;
+}
+
+body {
+  background: #000;
+}
+
+div#title {
+  padding: 10px;
+  text-align: center;
+  color: #999;
+}
+
+div#inventory {
+  padding: 10px;
+  background: #ddd;
+}
+div#units {
+  padding: 10px;
+  background: #aaa;
+}
