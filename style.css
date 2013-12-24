@@ -14,9 +14,19 @@ div#title {
   color: #999;
 }
 
+button {
+  background: #fff;
+  padding: 2px;
+  border: 2px solid #000;
+}
+
 div#inventory {
   padding: 10px;
   background: #ddd;
+}
+div#buildings {
+  padding: 10px;
+  background: #ccc;
 }
 div#units {
   padding: 10px;

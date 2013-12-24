@@ -1,13 +1,14 @@
 <!doctype html>
 <html>
 <head>
-<title>Cutting Down Trees.</title>
+<title>CDT.</title>
 <link rel='stylesheet' href='style.css'>
 
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
 <script>
 
 var num_lumberjacks = 1;
+var num_plankers = 0;
 var num_logs = 0;
 var money = 0;
 
@@ -18,15 +19,25 @@ function addLogs(num) {
   $('#num_logs').html(num_logs);
 }
 
+function addLumberjacks(num) {
+  num_lumberjacks += num;
+  $('#num_lumberjacks').html(num_lumberjacks);
+}
+
 function gameTick() {
   addLogs(num_lumberjacks);
 }
 
 function init() {
   $('#num_lumberjacks').html(num_lumberjacks);
+  $('#num_plankers').html(num_plankers);
   $('#num_logs').html(num_logs);
   $('#money').html(money);
   game_tick_timer = setInterval(gameTick, 1000);
+  $('#buy_lumberjack').click(function() {
+    addLogs(-10);
+    addLumberjacks(1);
+  });
 }
 
 $(document).ready(init);
@@ -36,14 +47,21 @@ $(document).ready(init);
 </head>
 <body>
 <div id='title'>
-<h1>Cutting Down Trees.</h1>
+<h1>cutting down trees</h1>
 </div>
 <div id='inventory'>
   <p>Logs: <span id='num_logs'></span></p>
   <p>Money: <span id='money'></span></p>
 </div>
+<div id='buildings'>
+  <button id='buy_trading_post'>Buy trading post</button>
+  <button id='buy_lumber_yard'>Buy lumber yard</button>
+</div>
 <div id='units'>
   <p>Lumberjacks: <span id='num_lumberjacks'></span></p>
+  <button id='buy_lumberjack'>Buy lumberjack (10 logs)</button>
+  <p>Plankers: <span id='num_plankers'></span></p>
+  <button id='buy_planker'>Buy planker</button>
 </div>
 </body>
 </html>
