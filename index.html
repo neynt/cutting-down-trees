@@ -1,9 +1,104 @@
 <!doctype html>
 <html>
 <head>
-<title>CDT.</title>
-<link rel='stylesheet' href='style.css'>
+<title>cutting down trees</title>
+<link href='http://fonts.googleapis.com/css?family=Lilita+One' rel='stylesheet' type='text/css'>
+<style>
 
+/* normalize ... everything! */
+* {
+  padding: 0;
+  margin: 0;
+  font-family: 'Lilita One';
+}
+
+body {
+  background: #888;
+  font-size: 16pt;
+  border-bottom: 8px solid #ff1b00;
+}
+
+div#foot {
+  background: #333;
+  text-align: center;
+  margin-top: 100%;
+  padding-top: 50%;
+  color: #ff1b00;
+}
+div#foot a {
+  color: #ff1b00;
+}
+
+h1, h2, h3 {
+  color: #333;
+  font-weight: 400;
+}
+
+h2 {
+  color: rgba(255, 255, 255, 0.9);
+  text-shadow: 0px 0px 4px #000;
+}
+
+div#title {
+  padding: 70px 10px 100px;
+  background: url('img/tree.png') repeat-x center bottom, #63c7ff;
+  text-align: center;
+  border-bottom: 8px solid #00a42e;
+}
+div#title #topper, div#title #topper2 {
+  color: #fff;
+}
+
+button {
+  background: #fff;
+  padding: 2px;
+  border: 2px solid #000;
+  font-size: 16pt;
+}
+
+div#inventory {
+  padding: 10px;
+  background: #9f4d00;
+}
+div#buildings {
+  padding: 10px;
+  background: #916a45;
+}
+div#units {
+  padding: 10px;
+  background: #94806d;
+}
+
+/* items */
+span.item {
+  display: inline-block;
+  min-width: 160px;
+}
+
+div.nummer {
+  padding: 20px;
+  color: #fff;
+  background-size: cover;
+  text-shadow:
+    -1px -1px 0px #000,
+     1px -1px 0px #000,
+    -1px 1px 0px #000,
+     1px 1px 0px #000,
+    -1px -1px 2px #000,
+     1px -1px 2px #000,
+    -1px 1px 2px #000,
+     1px 1px 2px #000;
+  font-size: 16pt;
+}
+
+div.progress {
+  height: 3px;
+  background: #fff;
+}
+
+</style>
+
+<!-- jquery motherfuckers #botnetlyfe -->
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
 <script>
 
@@ -14,30 +109,146 @@ var money = 0;
 
 var game_tick_timer;
 
-function addLogs(num) {
-  num_logs += num;
-  $('#num_logs').html(num_logs);
+function Resource(name, display_name, image) {
+  this.name = name;
+  this.display_name = display_name;
+
+  this.setAmount = function(amount) {
+    this.amount = amount;
+    this.on_page_value.html(this.display_name + "<br />" + this.amount);
+
+    // just in case
+    if (this.amount > 0) {
+      this.on_page.css('display', 'inline-block');
+    }
+  }
+
+  this.change = function(delta_amount) {
+    if (this.amount + delta_amount >= 0) {
+      this.setAmount(this.amount + delta_amount);
+      return true;
+    }
+    else {
+      return false;
+    }
+  }
+
+  this.build = function() {
+    this.on_page_value.html(this.display_name);
+    this.on_page.css('display', 'inline-block');
+  }
+
+  this.on_page = $('#' + this.name + '_box');
+  this.on_page.css('display', 'none');
+  this.on_page.append('<div id="' + 'num_' + name + '"></div>');
+  this.on_page_value = $('#num_' + name);
+  this.on_page_value.css('background-image', 'url("' + image + '")');
+  this.on_page_value.addClass('nummer');
+  this.setAmount(0);
 }
 
-function addLumberjacks(num) {
-  num_lumberjacks += num;
-  $('#num_lumberjacks').html(num_lumberjacks);
+function Unit(name, display_name, image) {
+  this.progress_max = 1;
+  this.progress = 0;
+
+  Resource.call(this, name, display_name, image);
+
+  this.progress_action = function() {
+  }
+
+  this.tick = function() {
+    this.progress += 1;
+    this.on_page_progress.css('width', (this.progress/this.progress_max*100)+'%');
+    while (this.progress >= this.progress_max) {
+      this.progress_action();
+      this.progress -= this.progress_max;
+    }
+  }
+
+  this.on_page.append('<div class="progress" id="' + 'progress_' + name + '"></div>');
+  this.on_page_progress = $('#progress_' + name);
 }
 
 function gameTick() {
-  addLogs(num_lumberjacks);
+  for (i in unit) {
+    unit[i].tick();
+  }
+}
+
+function hide_button(button_name) {
+  buttons[button_name].css('display', 'none');
+}
+function show_button(button_name) {
+  buttons[button_name].css('display', 'inline-block');
 }
 
 function init() {
-  $('#num_lumberjacks').html(num_lumberjacks);
-  $('#num_plankers').html(num_plankers);
-  $('#num_logs').html(num_logs);
-  $('#money').html(money);
-  game_tick_timer = setInterval(gameTick, 1000);
-  $('#buy_lumberjack').click(function() {
-    addLogs(-10);
-    addLumberjacks(1);
-  });
+  res = {
+    'money': new Resource('money', 'Coins', 'img/bitcoin.jpg'),
+    'logs': new Resource('logs', 'Logs', 'img/logs.jpg')
+  };
+  unit = {
+    'lumberjacks': new Unit('lumberjacks', 'Lumberjacks', 'img/lumberjack.jpg')
+  };
+  building = {
+    'trading_post': new Resource('trading_post', 'Trading Post', 'img/trading_post.jpg')
+  };
+  
+  unit['lumberjacks'].progress_action = function() {
+    res['logs'].change(this.amount);
+  }
+  unit['lumberjacks'].progress_max = 200;
+
+  res['money'].setAmount(100);
+
+  /* buy stuff buttons */
+  buttons = {
+    'buy_lumberjack':
+    $('<button/>', {
+        text: 'Buy lumberjack (100 coins)',
+        click: function () {
+          var cost = Math.ceil(100 * (1+Math.pow(unit['lumberjacks'].amount, 2)/10));
+          console.log(cost);
+          if (res['money'].change(-cost)) {
+            unit['lumberjacks'].change(1);
+          }
+          var cost = Math.ceil(100 * (1+Math.pow(unit['lumberjacks'].amount, 2)/10));
+          this.innerHTML = 'Buy lumberjack (' + cost + ' coins)';
+        }
+    }),
+
+    'build_trading_post':
+    $('<button/>', {
+        text: 'Build trading posts (10 logs)',
+        click: function () {
+          if (res['logs'].change(-10)) {
+            building['trading_post'].build();
+            hide_button('build_trading_post');
+            show_button('sell_logs');
+          }
+        }
+    }),
+
+    'sell_logs':
+    $('<button/>', {
+        text: 'Sell 1/2 your logs (10 coins per log)',
+        click: function () {
+          var to_sell = Math.ceil(res['logs'].amount/2);
+          res['logs'].change(-to_sell);
+          res['money'].change(to_sell*10);
+        },
+        style: 'display: none'
+    }),
+  }
+
+  var $units = $('#units');
+  for (i in buttons) {
+    buttons[i].init();
+    $units.append(buttons[i]);
+  }
+
+  show_button('buy_lumberjack');
+  game_tick_timer = setInterval(gameTick, 20);
 }
 
 $(document).ready(init);
@@ -47,21 +258,23 @@ $(document).ready(init);
 </head>
 <body>
 <div id='title'>
-<h1>cutting down trees</h1>
+<h1 id='topper'>cutting down trees</h1>
 </div>
 <div id='inventory'>
-  <p>Logs: <span id='num_logs'></span></p>
-  <p>Money: <span id='money'></span></p>
+  <h2>things</h2>
+  <span class='item' id='money_box'></span>
+  <span class='item' id='logs_box'></span>
+  <span class='item' id='lumberjacks_box'></span>
 </div>
 <div id='buildings'>
-  <button id='buy_trading_post'>Buy trading post</button>
-  <button id='buy_lumber_yard'>Buy lumber yard</button>
+  <h2>buildings</h2>
+  <span class='item' id='trading_post_box'></span>
 </div>
 <div id='units'>
-  <p>Lumberjacks: <span id='num_lumberjacks'></span></p>
-  <button id='buy_lumberjack'>Buy lumberjack (10 logs)</button>
-  <p>Plankers: <span id='num_plankers'></span></p>
-  <button id='buy_planker'>Buy planker</button>
+  <h2>actions</h2>
+</div>
+<div id='foot'>
+  <p>a love story by <a href='http://neynt.tk/'>neynt</p>
 </div>
 </body>
 </html>
