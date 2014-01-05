@@ -19,7 +19,7 @@ body {
 }
 
 div#foot {
-  background: #333;
+  background: #111;
   text-align: center;
   margin-top: 100%;
   padding-top: 50%;
@@ -54,6 +54,13 @@ button {
   padding: 2px;
   border: 2px solid #000;
   font-size: 16pt;
+}
+button:hover {
+  color: #333;
+}
+button:active {
+  background: #000;
+  color: #f00;
 }
 
 div#inventory {
@@ -133,6 +140,10 @@ function Resource(name, display_name, image) {
     }
   }
 
+  this.have = function(amount) {
+    return (this.amount >= amount);
+  }
+
   this.build = function() {
     this.on_page_value.html(this.display_name);
     this.on_page.css('display', 'inline-block');
@@ -158,11 +169,13 @@ function Unit(name, display_name, image) {
 
   this.tick = function() {
     this.progress += 1;
-    this.on_page_progress.css('width', (this.progress/this.progress_max*100)+'%');
-    while (this.progress >= this.progress_max) {
-      this.progress_action();
-      this.progress -= this.progress_max;
+    if (alive) {
+      while (this.progress >= this.progress_max) {
+        this.progress_action();
+        this.progress -= this.progress_max;
+      }
     }
+    this.on_page_progress.css('width', (this.progress/this.progress_max*100)+'%');
   }
 
   this.on_page.append('<div class="progress" id="' + 'progress_' + name + '"></div>');
@@ -182,60 +195,150 @@ function show_button(button_name) {
   buttons[button_name].css('display', 'inline-block');
 }
 
+total_trees_cut = 0;
+alive = true;
+function cut_down_trees(amount) {
+  total_trees_cut += amount;
+  // first 100 trees: fade out the title
+  if (total_trees_cut <= 100) {
+    $('#topper').css('opacity', 1-total_trees_cut/100);
+  }
+  else if (total_trees_cut > 100) {
+    $('#topper').css('opacity', 0);
+    // 4 million trees in the world, once they're all gone they're all gone
+    var r = (1-total_trees_cut/40000000);
+    $('#title').css('background-color', 'rgb(' + Math.ceil(99*r) + ',' + Math.ceil(199*r) + ',' + Math.ceil(255*r) + ')' );
+    //$('#topper').html(total_trees_cut / 4000000);
+    if (r <= 0) {
+      alive = false;
+      $('#title').css('background', '#4D0000');
+      $('#topper').css('opacity', 1);
+      $('#topper').css('color', '#ff0000');
+      $('#topper').html('no more trees')
+    }
+  }
+}
+
 function init() {
   res = {
     'money': new Resource('money', 'Coins', 'img/bitcoin.jpg'),
-    'logs': new Resource('logs', 'Logs', 'img/logs.jpg')
+    'logs': new Resource('logs', 'Logs', 'img/logs.jpg'),
   };
   unit = {
-    'lumberjacks': new Unit('lumberjacks', 'Lumberjacks', 'img/lumberjack.jpg')
+    'lumberjacks': new Unit('lumberjacks', 'Lumberjacks', 'img/lumberjack.jpg'),
+    'tree_cutters': new Unit('tree_cutters', 'Tree Cutters', 'img/treecutter.jpg'),
+    'big_saws': new Unit('big_saws', 'Really Big Saws', 'img/saw.jpg'),
   };
   building = {
-    'trading_post': new Resource('trading_post', 'Trading Post', 'img/trading_post.jpg')
+    'trading_post': new Resource('trading_post', 'Trading Post', 'img/trading_post.jpg'),
+    'factory': new Resource('factory', 'Factory', 'img/factory.jpg'),
   };
   
   unit['lumberjacks'].progress_action = function() {
-    res['logs'].change(this.amount);
+    if (alive) {
+      res['logs'].change(this.amount);
+      cut_down_trees(this.amount);
+    }
   }
   unit['lumberjacks'].progress_max = 200;
+
+  unit['tree_cutters'].progress_action = function() {
+    if (alive) {
+      res['logs'].change(this.amount * 15);
+      cut_down_trees(this.amount * 15);
+    }
+  }
+  unit['tree_cutters'].progress_max = 100;
+
+  unit['big_saws'].progress_action = function() {
+    if (alive) {
+      res['logs'].change(this.amount * 9001);
+      cut_down_trees(this.amount * 9001);
+    }
+  }
+  unit['big_saws'].progress_max = 50;
 
   res['money'].setAmount(100);
 
   /* buy stuff buttons */
   buttons = {
-    'buy_lumberjack':
+    'sell_logs':
     $('<button/>', {
-        text: 'Buy lumberjack (100 coins)',
+        text: 'Sell half your logs (30 coins each)',
         click: function () {
-          var cost = Math.ceil(100 * (1+Math.pow(unit['lumberjacks'].amount, 2)/10));
-          console.log(cost);
+          var to_sell = Math.ceil(res['logs'].amount/2);
+          res['logs'].change(-to_sell);
+          res['money'].change(to_sell*30);
+        },
+        style: 'display: none'
+    }),
+
+    'hire_lumberjack':
+    $('<button/>', {
+        text: 'Hire lumberjack (+1 log/4 seconds) (100 coins)',
+        click: function () {
+          var cost = Math.ceil(100 * (1+Math.pow(unit['lumberjacks'].amount, 2)/100));
           if (res['money'].change(-cost)) {
             unit['lumberjacks'].change(1);
           }
-          var cost = Math.ceil(100 * (1+Math.pow(unit['lumberjacks'].amount, 2)/10));
-          this.innerHTML = 'Buy lumberjack (' + cost + ' coins)';
+          var cost = Math.ceil(100 * (1+Math.pow(unit['lumberjacks'].amount, 2)/100));
+          this.innerHTML = 'Hire lumberjack (+1 log/4 seconds) (' + cost + ' coins)';
         }
     }),
 
     'build_trading_post':
     $('<button/>', {
-        text: 'Build trading posts (10 logs)',
+        text: 'Build trading post (10 logs)',
         click: function () {
           if (res['logs'].change(-10)) {
             building['trading_post'].build();
             hide_button('build_trading_post');
             show_button('sell_logs');
+            show_button('build_factory');
           }
-        }
+        },
     }),
 
-    'sell_logs':
+    'build_factory':
     $('<button/>', {
-        text: 'Sell 1/2 your logs (10 coins per log)',
+        text: 'Build factory (100 logs, 1000 coins)',
         click: function () {
-          var to_sell = Math.ceil(res['logs'].amount/2);
-          res['logs'].change(-to_sell);
-          res['money'].change(to_sell*10);
+          if (res['logs'].have(100) && res['money'].have(1000)) {
+            res['logs'].change(-100);
+            res['money'].change(-1000);
+            building['factory'].build();
+            hide_button('build_factory');
+            show_button('build_tree_cutter');
+            show_button('build_really_big_saw');
+          }
+        },
+        style: 'display: none'
+    }),
+
+    'build_tree_cutter':
+    $('<button/>', {
+        text: 'Build tree cutter (+10 logs/2 seconds) (1500 coins)',
+        click: function () {
+          var cost = Math.ceil(1500 * (1+Math.pow(unit['tree_cutters'].amount, 2)/100));
+          if (res['money'].change(-cost)) {
+            unit['tree_cutters'].change(1);
+          }
+          var cost = Math.ceil(1500 * (1+Math.pow(unit['tree_cutters'].amount, 2)/100));
+          this.innerHTML = 'Build tree cutter (+10 log/2 seconds) (' + cost + ' coins)';
+        },
+        style: 'display: none'
+    }),
+
+    'build_really_big_saw':
+    $('<button/>', {
+        text: 'Build really big saw (+9001 logs/1 second) (1000000 coins)',
+        click: function () {
+          var cost = Math.ceil(1000000 * (1+Math.pow(unit['big_saws'].amount, 2)/100));
+          if (res['money'].change(-cost)) {
+            unit['big_saws'].change(1);
+          }
+          var cost = Math.ceil(1000000 * (1+Math.pow(unit['big_saws'].amount, 2)/100));
+          this.innerHTML = 'Build really big saw (+9001 logs/1 second) (' + cost + ' coins)';
         },
         style: 'display: none'
     }),
@@ -247,7 +350,7 @@ function init() {
     $units.append(buttons[i]);
   }
 
-  show_button('buy_lumberjack');
+  show_button('hire_lumberjack');
   game_tick_timer = setInterval(gameTick, 20);
 }
 
@@ -265,10 +368,13 @@ $(document).ready(init);
   <span class='item' id='money_box'></span>
   <span class='item' id='logs_box'></span>
   <span class='item' id='lumberjacks_box'></span>
+  <span class='item' id='tree_cutters_box'></span>
+  <span class='item' id='big_saws_box'></span>
 </div>
 <div id='buildings'>
   <h2>buildings</h2>
   <span class='item' id='trading_post_box'></span>
+  <span class='item' id='factory_box'></span>
 </div>
 <div id='units'>
   <h2>actions</h2>
